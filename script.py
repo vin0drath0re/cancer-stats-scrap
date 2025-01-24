@@ -3,8 +3,6 @@ from bs4 import BeautifulSoup
 import json
 import csv 
 
-## structured_data.csv and clean_data.txt files not included in the submitted zip, you can run the script to generate the files
-
 
 def scrape_tables(url):
     # to send a request to the URL and get a response
