@@ -3,7 +3,11 @@ from bs4 import BeautifulSoup
 import json
 import csv 
 
+## structured_data.csv and clean_data.txt files not included in the submitted zip, you can run the script to generate the files
+
+
 def scrape_tables(url):
+    # to send a request to the URL and get a response
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -19,6 +23,7 @@ def scrape_tables(url):
 
         for table in tables:
 
+            # to extract the data from the tables
             table_data = []
             for row in table.find_all('tr'):
                 cells = row.find_all(['td', 'th'])
@@ -26,9 +31,9 @@ def scrape_tables(url):
                 table_data.append(row_data)
 
             all_tables_data.append(table_data)
-
-            all_tables_data = [
-                table for table in all_tables_data if len(table) == 187]
+            
+            # to remove the tables we dont need
+            all_tables_data = [table for table in all_tables_data if len(table) == 187] 
 
         return all_tables_data
 
@@ -38,6 +43,7 @@ def scrape_tables(url):
 
 
 def write_to_txt(data, filename):
+    # to write the data to a clean_data.txt file in a readable format
     with open(filename, 'w') as file:
         for table in data:
             for row in table:
@@ -46,7 +52,7 @@ def write_to_txt(data, filename):
     
 
 def data_cleanup(all_tables_data):
-
+    # to clean the data and structure it to be able to structure to a JSON format
     for table in all_tables_data:
         table.pop(0)
         for row in table:
@@ -58,10 +64,11 @@ def data_cleanup(all_tables_data):
         for row in table:
 
             for i in range(1, len(row)):
-
+                # to remove commas, non-breaking spaces, and spaces from the numerical values
                 cell = row[i].replace(",", "").replace(u'\xa0', "").replace(" ", "")
                 row[i] = cell
 
+            # to make the country names consistent, so that they can be matched across the tables
             if row[0].lower().strip() == "korea, north":
                 row[0] = "North Korea"
             if row[0].lower().strip() == "korea, south":
@@ -72,6 +79,7 @@ def data_cleanup(all_tables_data):
                 row[0] = "Netherlands"
 
     for table in all_tables_data:
+        # to sort the tables by country name
         world_row = table.pop(0)
         table.sort(key=lambda x: x[0])
         table.insert(0, world_row)  
@@ -80,6 +88,7 @@ def data_cleanup(all_tables_data):
 
 
 def structure_data(clean_data):
+    # to structure the data in a JSON format
     structured_data = {
         "with_nmsc": {
             "both": {
@@ -117,6 +126,7 @@ def structure_data(clean_data):
     countries = [clean_data[0][index][0] for index in range(len(clean_data[0]))]
 
     for i in range(len(countries)):
+        # inserting the data into the structured format
         structured_data["with_nmsc"]["both"]["population"][countries[i]] = int(clean_data[0][i][1])
         structured_data["with_nmsc"]["both"]["asr"][countries[i]] = float(clean_data[0][i][2])
         structured_data["with_nmsc"]["both"]["mortality"][countries[i]] = int(clean_data[6][i][1])
@@ -142,11 +152,13 @@ def structure_data(clean_data):
 
 
 def write_to_json(data, filename):
+    # to write the data to a JSON file
     with open(filename, 'w') as file:
         json.dump(data, file, indent=4)
 
 
 def write_to_csv(data, filename):
+    # to write the data to a CSV file 
     with open(filename, 'w') as file:
         csv_writer = csv.writer(file)
         csv_writer.writerow(["Country", 
@@ -159,6 +171,7 @@ def write_to_csv(data, filename):
 
                              
         for country in data["with_nmsc"]["both"]["population"]:
+            # using the dictionary keys to write the data to the CSV file
             csv_writer.writerow([country, 
                                  data["with_nmsc"]["both"]["population"][country], data["with_nmsc"]["both"]["asr"][country], data["with_nmsc"]["both"]["mortality"][country], 
                                  data["with_nmsc"]["men"]["population"][country], data["with_nmsc"]["men"]["mortality"][country], 
@@ -168,6 +181,7 @@ def write_to_csv(data, filename):
                                  data["without_nmsc"]["women"]["population"][country], data["without_nmsc"]["women"]["mortality"][country]])
 
 
+# source URL
 url = 'https://www.wcrf.org/preventing-cancer/cancer-statistics/global-cancer-data-by-country/'
 
 all_tables_data = scrape_tables(url)
