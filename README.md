@@ -1,5 +1,7 @@
 # Analysing Global Cancer Trends
 
+A project by - 
+**Vinod Singh Rathore**
 
 
 ## Overviews
